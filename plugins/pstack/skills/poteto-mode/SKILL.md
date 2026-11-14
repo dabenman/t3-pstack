@@ -107,6 +107,15 @@ A child starts in your checkout, which suits one writer while you write nothing.
 
 **A review gate stays closed when no independent reviewer can run.** A reviewer child that fails or is interrupted gets a fresh `delegate_task` in its place. Keep the results of reviewers that finished. Never count your own review, passing tests, or CI as the independent verdict. While the gate is blocked, record `BLOCKED: independent review` in the todolist, keep merge-ready and shipping closed, and report which reviewers ran and which are missing. Work that doesn't depend on the review continues. A fan-out run only to explore may fall back to one labelled sequential pass.
 
+**Place owners across machines.** The machine sheet, `~/.config/t3-pstack/machines.md` (`$XDG_CONFIG_HOME/t3-pstack/machines.md` when that is set), lists the machines a PR owner may run on, in preference order, each with its `environmentId`, capabilities, and max owners. Without it, every owner runs on your machine. With it, before each owner spawn:
+
+1. Name the capabilities the task needs, such as `five-app-machine` for installer or whole-machine five-app work, or `windows-sandbox` for Windows Sandbox work. Most work needs none.
+2. The candidates are the sheet's machines that have all of them and that `t3_environment_links` reports reachable. Your own machine, the top-level `environmentId` of that result, always counts as reachable.
+3. A candidate's load is the number of threads `t3_thread_list` reports `running` or `starting` for its `environmentId` with `allProjects`, so threads the user opened there count too.
+4. A candidate is full when the owners you placed there and that still run reach its max owners. Spawn the owner with `target.environmentId` set to the candidate that is not full and has the lowest load, ties going to the earlier sheet line. When every candidate is full, spawn nothing until an owner finishes.
+5. The owner's brief lets it spawn its own verifier on its own machine, with the same `environmentId`, from another model family as above.
+6. Record each owner's `environmentId` beside its `taskId`, and pass it to every later call for that owner that takes one, such as `t3_thread_send`.
+
 End every reply that ran a playbook with a dispatch ledger: one line per delegated step, naming the role and the `providerInstanceId/model` it ran on, or `in-thread: <reason>`.
 
 ## Writing the reply
