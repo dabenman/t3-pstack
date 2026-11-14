@@ -34,7 +34,7 @@ The default role-to-target mapping is the sheet shape in step 5 below. If the sh
 
 ### 4. Validate
 
-Write the candidate to a temp file. Call `orchestrator_capabilities` again and save its result to a temp file as `{"providers": [...]}`, copying verbatim the entry of every provider instance the candidate or the defaults name. Run `node <plugin root>/skills/setup-pstack/scripts/t3-sheet.mjs <candidate> <catalog.json>`, where `<plugin root>` is the directory that holds this plugin's `skills/`, and fix every line it prints. If `node` is missing, check each entry against the catalog by reading, and say so. A role with no line runs on its default, so add a line for any role whose default this machine cannot run.
+Write the candidate to a temp file. Call `orchestrator_capabilities` again and save its result to a temp file as `{"providers": [...]}`, copying verbatim the entry of every provider instance the candidate or the defaults name. Run `node <plugin root>/skills/setup-pstack/scripts/t3-sheet.mjs <candidate> <catalog.json>`, where `<plugin root>` is the absolute path of `~/.config/magpie/library`, the directory that holds this plugin's `skills/`, and fix every line it prints. If `node` is missing, check each entry against the catalog by reading, and say so. A role with no line runs on its default, so add a line for any role whose default this machine cannot run.
 
 ### 5. Write the sheet
 
@@ -44,23 +44,23 @@ Overwrite the sheet with the candidate, creating its directory and writing throu
 # pstack model configuration (T3). One line per role. Delete a line to fall back to the skill default.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.
 # budget: large (xhigh)
-feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh
-bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh
-perf-issue: claudeAgent/claude-fable-5-1 effort=xhigh
-hillclimb: claudeAgent/claude-fable-5-1 effort=xhigh
-judgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh
-hardest tasks: claudeAgent/claude-fable-5-1 effort=xhigh
-how explorer: claudeAgent/claude-opus-5-5 effort=xhigh
-how explainer: claudeAgent/claude-opus-5-5 effort=xhigh
-why investigators: claudeAgent/claude-opus-5-5 effort=xhigh
-why synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh
-reflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh
-reflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh
-arena runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
-arena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
-swarm workers: claudeAgent/claude-opus-5-5 effort=xhigh
-architect runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
-interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
+feature, refactoring: magpie-codex/group/pstack-t3
+bug-fix: magpie-codex/group/pstack-t2
+perf-issue: magpie-codex/group/pstack-t2
+hillclimb: magpie-codex/group/pstack-t2
+judgment and prose: magpie-codex/group/pstack-t3
+hardest tasks: magpie-codex/group/pstack-t1
+how explorer: magpie-codex/group/pstack-t3
+how explainer: magpie-codex/group/pstack-t3
+why investigators: magpie-codex/group/pstack-t3
+why synthesizer: magpie-codex/group/pstack-t3
+reflect tooling: magpie-codex/group/pstack-t3
+reflect judgment, divergent, synthesizer: magpie-codex/group/pstack-t3
+arena runners: magpie-codex/group/claude-t3, magpie-codex/group/gpt-t3, magpie-codex/group/deepseek-pool
+arena cross-judge pool: magpie-codex/group/claude-t1, magpie-codex/group/gpt-t1
+swarm workers: magpie-codex/group/pstack-t3
+architect runners: magpie-codex/group/claude-t3, magpie-codex/group/gpt-t3, magpie-codex/group/deepseek-pool
+interrogate reviewers: magpie-codex/group/claude-t1, magpie-codex/group/gpt-t1
 session hook: on
 ```
 

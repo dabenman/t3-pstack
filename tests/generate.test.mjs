@@ -68,12 +68,27 @@ describe("locators", () => {
 
 describe("regions", () => {
   test("every skill a role names gets that role's tier default stamped in its Models section", () => {
-    const marked = { ...models, tiers: { default: "x/marker-default", strongest: "x/marker-strongest", panel: ["a/claude-p", "b/gpt-p"] } };
+    const marked = {
+      ...models,
+      tiers: {
+        default: "x/marker-default",
+        strong: "x/marker-strong",
+        strongest: "x/marker-strongest",
+        panel: ["a/claude-p", "b/gpt-p"],
+        judges: ["a/claude-j", "b/gpt-j"],
+      },
+    };
     for (const skill of new Set(models.roles.map((r) => r.skill))) {
       const file = `plugins/pstack/skills/${skill}/SKILL.md`;
       const stamped = applyRegions(file, readFileSync(join(repoRoot, file), "utf8"), marked, { strict: true });
       for (const role of models.roles.filter((r) => r.skill === skill)) {
-        const expected = { default: "`x/marker-default`", strongest: "`x/marker-strongest`", panel: "`a/claude-p`, `b/gpt-p`" }[role.tier];
+        const expected = {
+          default: "`x/marker-default`",
+          strong: "`x/marker-strong`",
+          strongest: "`x/marker-strongest`",
+          panel: "`a/claude-p`, `b/gpt-p`",
+          judges: "`a/claude-j`, `b/gpt-j`",
+        }[role.tier];
         expect(stamped).toContain(`- ${role.role}: ${expected}`);
       }
     }
@@ -85,7 +100,7 @@ describe("regions", () => {
     const once = applyRegions(file, text, models, { strict: true });
     expect(once).not.toContain("stale");
     expect(once).toContain("## After\nkeep\n");
-    expect(once).toContain("- how explorer: `claudeAgent/claude-opus-5-5 effort=xhigh`");
+    expect(once).toContain("- how explorer: `magpie-codex/group/pstack-t3`");
     expect(applyRegions(file, once, models, { strict: true })).toBe(once);
   });
 
@@ -260,13 +275,13 @@ describe("deriveT3", () => {
     expect(out).toContain("body\n\n## Models\n\nRole defaults on T3, stamped from `plugins/pstack/models.json`.");
     expect(out).toContain("`t3-pstack-models.md`");
     expect(out).toContain("It splits at its first `/`");
-    expect(out.endsWith("- how explainer: `claudeAgent/claude-opus-5-5 effort=xhigh`\n")).toBe(true);
+    expect(out.endsWith("- how explainer: `magpie-codex/group/pstack-t3`\n")).toBe(true);
     expect(deriveT3("plugins/pstack/skills/how/SKILL.md", out, models)).toBe(out);
   });
 
   test("names the alias a released sheet may still use", () => {
     const out = deriveT3("plugins/pstack/skills/poteto-mode/SKILL.md", front("", "poteto-mode"), models);
-    expect(out).toContain("- hardest tasks: `claudeAgent/claude-fable-5-1 effort=xhigh` (a `strongest judgment` line counts as this role)");
+    expect(out).toContain("- hardest tasks: `magpie-codex/group/pstack-t1` (a `strongest judgment` line counts as this role)");
   });
 
   test("a file no region names passes through", () => {

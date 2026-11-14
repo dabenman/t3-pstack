@@ -1,18 +1,23 @@
 {
   "tiers": {
-    "default": "claudeAgent/claude-opus-5-5 effort=xhigh",
-    "strongest": "claudeAgent/claude-fable-5-1 effort=xhigh",
+    "default": "magpie-codex/group/pstack-t3",
+    "strong": "magpie-codex/group/pstack-t2",
+    "strongest": "magpie-codex/group/pstack-t1",
     "panel": [
-      "claudeAgent/claude-opus-5-5 effort=xhigh",
-      "codex/gpt-6.1-sol reasoningEffort=xhigh",
-      "grok/grok-4.7 reasoningEffort=xhigh"
+      "magpie-codex/group/claude-t3",
+      "magpie-codex/group/gpt-t3",
+      "magpie-codex/group/deepseek-pool"
+    ],
+    "judges": [
+      "magpie-codex/group/claude-t1",
+      "magpie-codex/group/gpt-t1"
     ]
   },
   "roles": [
     { "role": "feature, refactoring", "tier": "default", "skill": "poteto-mode" },
-    { "role": "bug-fix", "tier": "strongest", "skill": "poteto-mode" },
-    { "role": "perf-issue", "tier": "strongest", "skill": "poteto-mode" },
-    { "role": "hillclimb", "tier": "strongest", "skill": "poteto-mode" },
+    { "role": "bug-fix", "tier": "strong", "skill": "poteto-mode" },
+    { "role": "perf-issue", "tier": "strong", "skill": "poteto-mode" },
+    { "role": "hillclimb", "tier": "strong", "skill": "poteto-mode" },
     { "role": "judgment and prose", "tier": "default", "skill": "poteto-mode" },
     { "role": "hardest tasks", "alias": "strongest judgment", "tier": "strongest", "skill": "poteto-mode" },
     { "role": "how explorer", "tier": "default", "skill": "how" },
@@ -22,9 +27,9 @@
     { "role": "reflect tooling", "tier": "default", "skill": "reflect" },
     { "role": "reflect judgment, divergent, synthesizer", "tier": "default", "skill": "reflect" },
     { "role": "arena runners", "tier": "panel", "skill": "arena" },
-    { "role": "arena cross-judge pool", "tier": "panel", "skill": "arena" },
+    { "role": "arena cross-judge pool", "tier": "judges", "skill": "arena" },
     { "role": "swarm workers", "tier": "default", "skill": "swarm" },
     { "role": "architect runners", "tier": "panel", "skill": "architect" },
-    { "role": "interrogate reviewers", "tier": "panel", "skill": "interrogate" }
+    { "role": "interrogate reviewers", "tier": "judges", "skill": "interrogate" }
   ]
 }

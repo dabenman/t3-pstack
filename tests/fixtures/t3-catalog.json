@@ -3,6 +3,23 @@
   "inheritedModel": "claude-opus-5-5",
   "providers": [
     {
+      "providerInstanceId": "magpie-codex",
+      "driverKind": "codex",
+      "models": [
+        { "id": "group/pstack-t1", "options": [] },
+        { "id": "group/pstack-t2", "options": [] },
+        { "id": "group/pstack-t3", "options": [] },
+        { "id": "group/claude-t1", "options": [] },
+        { "id": "group/claude-t3", "options": [] },
+        { "id": "group/gpt-t1", "options": [] },
+        { "id": "group/gpt-t3", "options": [] },
+        { "id": "group/deepseek-pool", "options": [] }
+      ],
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": []
+    },
+    {
       "providerInstanceId": "codex",
       "driverKind": "codex",
       "models": [

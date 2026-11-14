@@ -1,10 +1,11 @@
 // The T3 sheet grammar and its check against an orchestrator_capabilities
 // catalog. The fixture is a trimmed copy of a real catalog: Claude names its
 // reasoning option `effort`, Codex and Grok name it `reasoningEffort`, and an
-// unauthenticated provider lists models it cannot run.
+// unauthenticated provider lists models it cannot run. Its magpie-codex
+// instance serves the magpie routing groups the tier defaults name.
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -108,24 +109,25 @@ describe("checkSheet against a catalog", () => {
 
   test("a catalog that lists each option's values as a plain array, as orchestrator_capabilities returns, checks values", () => {
     // A copy of a live orchestrator_capabilities result, trimmed to four
-    // providers. Its grok instance is disabled, so only the tier defaults that
-    // name grok fail; the Claude and Codex defaults at xhigh pass.
+    // providers. It has no magpie-codex instance, so only the tier defaults,
+    // which all name magpie groups, fail; the lines the test writes pass.
     const values = JSON.parse(readFileSync(join(root, "tests/fixtures/t3-catalog-values.json"), "utf8"));
     const problems = (lines) => check(lines.join("\n"), values);
-    const onlyGrokDefaults = (p) => p.includes("(no line, tier default): grok/grok-4.7: \"grok\" cannot run child tasks");
+    const onlyMagpieDefaults = (p) =>
+      p.includes("(no line, tier default): magpie-codex/group/") && p.endsWith('no provider instance "magpie-codex" in this T3');
     const valid = [
       "bug-fix: claudeAgent/claude-opus-5-5 effort=high fastMode=true",
       "feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=priority",
       "how explorer: cursor/grok-4.7 reasoning_effort=high fastMode=false contextWindow=256k",
     ];
-    expect(problems(valid).filter((p) => !onlyGrokDefaults(p))).toEqual([]);
-    expect(problems(valid).some(onlyGrokDefaults)).toBe(true);
+    expect(problems(valid).filter((p) => !onlyMagpieDefaults(p))).toEqual([]);
+    expect(problems(valid).some(onlyMagpieDefaults)).toBe(true);
     const invalid = [
       "bug-fix: claudeAgent/claude-opus-5-5 effort=extreme",
       "hillclimb: claudeAgent/claude-opus-5-5 fastMode=yes",
       "why synthesizer: grok/grok-4.7 reasoningEffort=high",
     ];
-    expect(problems(invalid).filter((p) => !onlyGrokDefaults(p))).toEqual([
+    expect(problems(invalid).filter((p) => !onlyMagpieDefaults(p))).toEqual([
       "bug-fix: claudeAgent/claude-opus-5-5: effort=extreme is not one of low, medium, high, xhigh, max, ultracode, ultrathink",
       "hillclimb: claudeAgent/claude-opus-5-5: fastMode=yes is not one of false, true",
       'why synthesizer: grok/grok-4.7: "grok" cannot run child tasks (Provider instance is disabled.)',
@@ -142,15 +144,19 @@ describe("checkSheet against a catalog", () => {
     }
   });
 
-  test("a role with no line is checked on its tier default, as on a machine without grok", () => {
-    const noGrok = structuredClone(catalog);
-    noGrok.providers = noGrok.providers.filter((p) => p.providerInstanceId !== "grok");
-    const panelRoles = roles.filter((r) => r.tier === "panel").map((r) => r.role);
-    expect(check("session hook: on", noGrok)).toEqual(
-      panelRoles.map((role) => `${role} (no line, tier default): grok/grok-4.7: no provider instance "grok" in this T3`),
+  test("a role with no line is checked on its tier default, as on a machine without magpie", () => {
+    const noMagpie = structuredClone(catalog);
+    noMagpie.providers = noMagpie.providers.filter((p) => p.providerInstanceId !== "magpie-codex");
+    expect(check("session hook: on", noMagpie)).toEqual(
+      roles.flatMap((role) =>
+        [defaults[role.tier]]
+          .flat()
+          .map((entry) => `${role.role} (no line, tier default): ${entry}: no provider instance "magpie-codex" in this T3`),
+      ),
     );
-    const lines = panelRoles.map((role) => `${role}: claudeAgent/claude-opus-5-5, codex/gpt-6.1-sol`).join("\n");
-    expect(check(lines, noGrok)).toEqual([]);
+    const entry = (role) => (Array.isArray(defaults[role.tier]) ? "claudeAgent/claude-opus-5-5, codex/gpt-6.1-sol" : "claudeAgent/claude-opus-5-5");
+    const lines = roles.map((role) => `${role.role}: ${entry(role)}`).join("\n");
+    expect(check(lines, noMagpie)).toEqual([]);
   });
 
   test("a panel on one family fails, whatever providers serve it", () => {
@@ -182,11 +188,9 @@ describe("checkSheet against a catalog", () => {
   test("a provider that cannot run cross-provider children fails, and its entries do not count as a family", () => {
     const noCross = structuredClone(catalog);
     noCross.providers.find((p) => p.providerInstanceId === "grok").canRunCrossProviderChildTask = false;
-    const otherPanels = roles.filter((r) => r.tier === "panel" && r.role !== PANEL).map((r) => r.role);
     expect(check(`${PANEL}: claudeAgent/claude-opus-5-5, grok/grok-4.7`, noCross)).toEqual([
       `${PANEL}: grok/grok-4.7: "grok" cannot run child tasks`,
       `${PANEL}: a panel needs at least two model families among its targets (inherit-parent does not count), got claude`,
-      ...otherPanels.map((role) => `${role} (no line, tier default): grok/grok-4.7: "grok" cannot run child tasks`),
     ]);
   });
 
@@ -268,6 +272,18 @@ describe("t3-sheet.mjs CLI", () => {
 
   test("exits 0 on a sheet that dispatches", () => {
     expect(run(script, "bug-fix: grok/grok-4.7 reasoningEffort=xhigh\n").status).toBe(0);
+  }, CLI_TIMEOUT);
+
+  // magpie links each skill folder on its own, so the checker reads the
+  // models.json copy beside it, and the magpie sheet passes.
+  test("runs from a copy of the setup-pstack folder alone and passes the magpie sheet", () => {
+    const skill = join(mkdtempSync(join(tmpdir(), "t3-sheet-skill-")), "setup-pstack");
+    cpSync(join(root, "plugins/pstack/skills/setup-pstack"), skill, { recursive: true });
+    const result = run(join(skill, "scripts/t3-sheet.mjs"), readFileSync(join(root, "magpie/models.md"), "utf8"));
+    expect({ status: result.status, stdout: result.stdout }).toEqual({
+      status: 0,
+      stdout: "ok: every role line parses and dispatches on this T3\n",
+    });
   }, CLI_TIMEOUT);
 });
 

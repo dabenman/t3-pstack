@@ -37,7 +37,7 @@ describe("parseModels", () => {
   };
   const role = (policy, label) => policy.roles.find((r) => r.role === label);
 
-  test.each(["default", "strongest", "panel"])("a missing %s tier throws naming it", (tier) => {
+  test.each(["default", "strong", "strongest", "panel", "judges"])("a missing %s tier throws naming it", (tier) => {
     expect(parse((p) => delete p.tiers[tier])).toThrow(`models.json: tiers has no "${tier}"`);
   });
 
@@ -53,10 +53,14 @@ describe("parseModels", () => {
     );
   });
 
-  test("a single-model tier holds one entry and the panel a list of two families", () => {
+  test("a single-model tier holds one entry and each panel tier a list of two families", () => {
     expect(parse((p) => (p.tiers.default = [p.tiers.default]))).toThrow('models.json: tier "default" must be one entry, not a list');
+    expect(parse((p) => (p.tiers.judges = p.tiers.judges[0]))).toThrow('models.json: tier "judges" must be a list');
     expect(parse((p) => (p.tiers.panel = ["claudeAgent/claude-opus-5-5", "claudeAgent/claude-fable-5-1"]))).toThrow(
-      "models.json: the panel needs at least two model families",
+      'models.json: tier "panel" needs at least two model families',
+    );
+    expect(parse((p) => (p.tiers.judges = ["magpie-codex/group/claude-t1", "claudeAgent/claude-fable-5-1"]))).toThrow(
+      'models.json: tier "judges" needs at least two model families',
     );
     expect(parse((p) => (p.tiers.panel = ["codex/gpt-6.1-sol", "codex/gpt-6.1-sol"]))).toThrow(
       'models.json: tier "panel" lists an entry twice',
