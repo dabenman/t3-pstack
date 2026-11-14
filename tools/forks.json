@@ -92,7 +92,7 @@
     },
     "plugins/pstack/skills/setup-pstack/SKILL.md": {
       "kind": "port-feature",
-      "why": "Writes the T3 model sheet from orchestrator_capabilities targets and checks it with t3-sheet.mjs, in place of Cursor's always-applied .mdc rule built from model slugs. Steps 7 and 8 open the generator's SKILL.md by its path from this file instead of invoking it, since on Claude Code the Skill tool refuses a skill with disable-model-invocation, a conflict Eric Litman's open-pstack recorded in its 0.15.29 sync (#234).",
+      "why": "Writes the T3 model sheet from orchestrator_capabilities targets and checks it with t3-sheet.mjs, in place of Cursor's always-applied .mdc rule built from model slugs. Steps 7 and 8 open the generator's SKILL.md by its path from this file instead of invoking it, since on Claude Code the Skill tool refuses a skill with disable-model-invocation, a conflict Eric Litman's open-pstack recorded in its 0.15.29 sync (#234). On the magpie fork, step 4 names `~/.config/magpie/library` as `<plugin root>`, because magpie links each skill folder into every agent on its own, so no plugin directory holds them.",
       "since": "2.0.0-rc.1",
       "upstream": "not-proposed"
     }

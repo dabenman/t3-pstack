@@ -17,6 +17,12 @@
 //   LICENSE, LICENSE-cursor-team-kit, LICENSE-thermos, NOTICE-skills.md
 //     -> copies under poteto-mode/references/licenses/, so the notices ship
 //        inside the installed plugin
+//   plugins/pstack/agents/*.md -> copies under poteto-mode/agents/, and
+//   plugins/pstack/models.json -> setup-pstack/models.json, so a skills
+//     directory that holds only the skill folders resolves every persona brief
+//     and the sheet checker's defaults
+//   plugins/pstack/models.json -> magpie/models.md, the model sheet the magpie
+//     machines use, as setup-pstack writes it with every default kept
 //
 // Also validated: skill frontmatter, the skills tree's links,
 // the plugin layout, agent frontmatter, the Codex marketplace, and both hooks
@@ -41,7 +47,7 @@ import { Type } from "typebox";
 import { Value } from "typebox/value";
 
 import { panelFamilies, parseEntry } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
-import { applyRegions, parseFrontmatter, ROUTED_SKILL, t3Regions } from "./derive-t3.mjs";
+import { applyRegions, parseFrontmatter, ROUTED_SKILL, sheetBlock, t3Regions } from "./derive-t3.mjs";
 import { FROZEN_HOOKS, hookDigest, PLUGIN, SKILLS } from "./plugin.mjs";
 import { pathIsInside, validateSkillsTree, walk } from "./validate-skills.mjs";
 
@@ -67,7 +73,13 @@ export const PORTABLE_ASSETS = [
 
 // The generator removes every entry of these directories that no planned path
 // runs through, so no hand-written file may live in one.
-export const OWNED_DIRS = [LICENSES];
+// The persona briefs, copied into a skill so each resolves from the skill
+// folders alone, and the model policy copy the sheet checker reads beside it.
+const AGENT_COPIES = `${SKILLS}/poteto-mode/agents`;
+const MODELS_COPY = `${SKILLS}/setup-pstack/models.json`;
+const MAGPIE_SHEET = "magpie/models.md";
+
+export const OWNED_DIRS = [LICENSES, AGENT_COPIES];
 
 // A release version, with an optional pre-release suffix such as -rc.1.
 const VERSION_RE = /\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?/;
@@ -200,12 +212,14 @@ export function validatePluginLayout(pluginRoot) {
   }
 }
 
-const TIERS = ["default", "strongest", "panel"];
+const TIERS = ["default", "strong", "strongest", "panel", "judges"];
+// The tiers that hold a list, one subagent per entry.
+const PANEL_TIERS = ["panel", "judges"];
 
 // Check models.json's shape, throwing with the offending tier, role, or entry
 // named. `skillExists(skill)` reports whether a role's skill directory carries
 // a SKILL.md. Every tier holds T3 entries in the sheet grammar of
-// setup-pstack's t3-sheet.mjs, and the panel spans two model families.
+// setup-pstack's t3-sheet.mjs, and each panel tier spans two model families.
 export function parseModels(raw, skillExists) {
   const fail = (message) => {
     throw new Error(`models.json: ${message}`);
@@ -216,8 +230,9 @@ export function parseModels(raw, skillExists) {
   for (const tier of TIERS) if (!Object.hasOwn(raw.tiers, tier)) fail(`tiers has no "${tier}"`);
   for (const [tier, value] of Object.entries(raw.tiers)) {
     if (!TIERS.includes(tier)) fail(`tiers names "${tier}", which is not one of ${TIERS.join(", ")}`);
-    if (tier !== "panel" && typeof value !== "string") fail(`tier "${tier}" must be one entry, not a list`);
-    if (tier === "panel" && !Array.isArray(value)) fail('tier "panel" must be a list');
+    const panel = PANEL_TIERS.includes(tier);
+    if (!panel && typeof value !== "string") fail(`tier "${tier}" must be one entry, not a list`);
+    if (panel && !Array.isArray(value)) fail(`tier "${tier}" must be a list`);
     const list = [value].flat();
     if (new Set(list).size !== list.length) fail(`tier "${tier}" lists an entry twice`);
     const parsed = list.map((entry) => {
@@ -233,7 +248,7 @@ export function parseModels(raw, skillExists) {
       if (!target) fail(`tier "${tier}" must name a target, not inherit the parent`);
       return target;
     });
-    if (tier === "panel" && panelFamilies(parsed).size < 2) fail("the panel needs at least two model families");
+    if (panel && panelFamilies(parsed).size < 2) fail(`tier "${tier}" needs at least two model families`);
   }
   const labels = new Set();
   for (const role of raw.roles) {
@@ -478,6 +493,11 @@ export function plan(root, models) {
     }
     files[`${LICENSES}/${target}`] = read(source);
   }
+  for (const agent of pluginAgentPaths(join(root, PLUGIN))) {
+    files[`${AGENT_COPIES}/${basename(agent)}`] = read(`${PLUGIN}/${agent.slice(2)}`);
+  }
+  files[MODELS_COPY] = read(`${PLUGIN}/models.json`);
+  files[MAGPIE_SHEET] = sheetBlock(models).join("\n") + "\n";
   return { files, ownedDirs: OWNED_DIRS };
 }
 

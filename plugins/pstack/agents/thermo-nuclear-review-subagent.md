@@ -25,4 +25,4 @@ Do **not** spawn nested subagents unless the user or parent explicitly asks.
 
 ## Parent orchestration
 
-Typical flow: run `git diff <base>...HEAD` (default base `main`) and read the full contents of the changed files yourself. Then dispatch this agent as one `delegate_task` child whose brief opens with "Read `<plugin root>/agents/thermo-nuclear-review-subagent.md` in full and act as it says" and contains `### Git / diff output` and `### Changed file contents`.
+Typical flow: run `git diff <base>...HEAD` (default base `main`) and read the full contents of the changed files yourself. Then dispatch this agent as one `delegate_task` child whose brief opens with "Read `<plugin root>/skills/poteto-mode/agents/thermo-nuclear-review-subagent.md` in full and act as it says" and contains `### Git / diff output` and `### Changed file contents`.
